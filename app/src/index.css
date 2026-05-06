@@ -1,0 +1,296 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #000; color: #b8e8f5; font-family: 'JetBrains Mono', monospace; }
+
+/* Hide number input spinners */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+/* ── Custom scrollbars ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #02080d; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #003d52, #00d4ff);
+  border: 1px solid #00d4ff40;
+}
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #00d4ff, #ff2eaa); }
+::-webkit-scrollbar-corner { background: #000; }
+* { scrollbar-color: #00d4ff #02080d; scrollbar-width: thin; }
+
+/* ── Selection ──────────────────────────────────────────────── */
+::selection { background: #00d4ff40; color: #fff; }
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scanShift {
+  from { background-position: 0 0; }
+  to   { background-position: 0 4px; }
+}
+@keyframes progressSlide {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(380%); }
+}
+@keyframes glitchText {
+  0%, 92%, 100% { transform: translate(0); filter: none; }
+  93% { transform: translate(-1px, 0); filter: hue-rotate(20deg); }
+  94% { transform: translate(1px, 0); filter: hue-rotate(-20deg); }
+  95% { transform: translate(0, 1px); }
+  96% { transform: translate(-1px, -1px); }
+}
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(0,212,255,0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(0,212,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,212,255,0); }
+}
+
+/* ── Glitch hover utility ───────────────────────────────────── */
+.cy-glitch:hover { animation: glitchText 0.4s steps(2, end); }
+
+/* ── Tab transition ─────────────────────────────────────────── */
+.tab-enter { animation: tabSlide 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes tabSlide {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);     filter: blur(0); }
+}
+
+/* ── Pulse ring on active items ─────────────────────────────── */
+.cy-pulse { animation: pulseRing 1.6s infinite; }
+
+/* ── Breathing card (subtle scale + glow) ────────────────────── */
+@keyframes cardBreathe {
+  0%, 100% { transform: scale(1);     filter: brightness(1); }
+  50%      { transform: scale(1.003); filter: brightness(1.04); }
+}
+.cy-breathe { animation: cardBreathe 6s ease-in-out infinite; }
+
+/* ── Number change flash ─────────────────────────────────────── */
+@keyframes numFlash {
+  0%   { filter: brightness(2.4) saturate(1.5); text-shadow: 0 0 18px currentColor; }
+  100% { filter: brightness(1)   saturate(1);   text-shadow: 0 0 8px currentColor; }
+}
+.cy-num-flash { animation: numFlash 0.45s ease-out; }
+
+/* ── Stagger reveal ──────────────────────────────────────────── */
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cy-stagger > * { opacity: 0; animation: staggerIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.cy-stagger > *:nth-child(1)  { animation-delay: 0.02s }
+.cy-stagger > *:nth-child(2)  { animation-delay: 0.07s }
+.cy-stagger > *:nth-child(3)  { animation-delay: 0.12s }
+.cy-stagger > *:nth-child(4)  { animation-delay: 0.17s }
+.cy-stagger > *:nth-child(5)  { animation-delay: 0.22s }
+.cy-stagger > *:nth-child(6)  { animation-delay: 0.27s }
+.cy-stagger > *:nth-child(7)  { animation-delay: 0.32s }
+.cy-stagger > *:nth-child(8)  { animation-delay: 0.37s }
+.cy-stagger > *:nth-child(9)  { animation-delay: 0.42s }
+.cy-stagger > *:nth-child(10) { animation-delay: 0.47s }
+.cy-stagger > *:nth-child(n+11) { animation-delay: 0.52s }
+
+/* ── CRT scanline drift ─────────────────────────────────────── */
+@keyframes crtSweep {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(100vh); }
+}
+
+/* ── Vignette breathing ─────────────────────────────────────── */
+@keyframes vignettePulse {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1.0; }
+}
+
+/* ── Animated border trace (for hero cards) ──────────────────── */
+.cy-border-trace { position: relative; }
+.cy-border-trace::before {
+  content: ''; position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, transparent 30%, rgba(0,212,255,0.5) 50%, transparent 70%, transparent 100%);
+  background-size: 300% 100%;
+  animation: borderTrace 4s linear infinite;
+  mix-blend-mode: screen;
+  clip-path: polygon(0 0, 100% 0, 100% 1px, 0 1px);
+}
+@keyframes borderTrace {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ── Hover lift for buttons ─────────────────────────────────── */
+.cy-lift { transition: transform 0.15s ease-out, filter 0.15s ease-out; }
+.cy-lift:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.cy-lift:active { transform: translateY(0) scale(0.98); }
+
+/* ── Subtle background grid (drifts) ─────────────────────────── */
+@keyframes gridDrift {
+  from { background-position: 0 0; }
+  to   { background-position: 40px 40px; }
+}
+.cy-grid-bg {
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridDrift 60s linear infinite;
+}
+
+/* ── Custom avatar-bound cursor ─────────────────────────────── */
+html, body { cursor: none; }
+* { cursor: inherit; }
+/* Restore native I-beam on text inputs so the caret position is visible */
+input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]):not([type=range]),
+textarea, select, [contenteditable="true"] { cursor: text !important; }
+button, a, [role=button], [data-interactive] { cursor: none; }
+
+/* Touch devices: native cursor only, hide custom cursor */
+@media (hover: none) and (pointer: coarse) {
+  html, body, * { cursor: auto !important; }
+  .cy-cursor, .cy-cursor-trail, .cy-cursor-ripple, .cy-cursor-shockwave { display: none !important; }
+}
+
+.cy-cursor {
+  position: fixed; top: 0; left: 0;
+  pointer-events: none;
+  z-index: 99999;
+  will-change: transform;
+  transition: opacity 0.2s ease, filter 0.25s ease;
+}
+.cy-cursor.cy-cursor-hidden { opacity: 0; }
+.cy-cursor-inner {
+  transform-origin: 18px 18px;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s;
+  animation: cursorBreathe 4.5s ease-in-out infinite;
+}
+@keyframes cursorBreathe {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.15); }
+}
+.cy-cursor-inner.cy-cursor-hot  { transform: scale(1.35); filter: brightness(1.5); }
+.cy-cursor-inner.cy-cursor-text { transform: scale(0.6); filter: brightness(0.7); }
+
+.cy-cursor-ripple {
+  position: fixed; pointer-events: none;
+  z-index: 99998;
+  width: 8px; height: 8px;
+  border: 1.6px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 12px currentColor;
+  animation: cyRipple 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes cyRipple {
+  0%   { width: 8px;   height: 8px;   opacity: 1;   border-width: 1.6px; }
+  100% { width: 100px; height: 100px; opacity: 0;   border-width: 0.4px; }
+}
+.cy-cursor-shockwave {
+  position: fixed; pointer-events: none;
+  z-index: 99997;
+  width: 4px; height: 4px;
+  border: 0.8px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  animation: cyShockwave 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes cyShockwave {
+  0%   { width: 4px;   height: 4px;   opacity: 0.7; }
+  100% { width: 240px; height: 240px; opacity: 0; }
+}
+.cy-cursor-trail {
+  position: fixed; pointer-events: none;
+  z-index: 99996;
+  width: 4px; height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px currentColor, 0 0 2px currentColor;
+  animation: cyTrail 0.6s linear forwards;
+}
+@keyframes cyTrail {
+  0%   { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.3); }
+}
+
+/* ── Digit-roll counter ─────────────────────────────────────── */
+.cy-digit-row {
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+.cy-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  vertical-align: baseline;
+  line-height: 1em;
+}
+.cy-digit-strip {
+  display: block;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cy-digit-strip > span {
+  display: block;
+  height: 1em;
+  line-height: 1em;
+}
+
+/* ── Cursor-tracked glow (for hero card) ────────────────────── */
+.cy-cursor-glow {
+  position: relative;
+  isolation: isolate;
+  --mx: 0.5;
+  --my: 0.5;
+  --on: 0;
+  --glow-color: 0,212,255;
+}
+.cy-cursor-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    420px circle at calc(var(--mx) * 100%) calc(var(--my) * 100%),
+    rgba(var(--glow-color), 0.18),
+    rgba(var(--glow-color), 0.06) 35%,
+    transparent 65%
+  );
+  opacity: var(--on);
+  transition: opacity 0.45s ease;
+  mix-blend-mode: screen;
+  clip-path: inherit;
+}
+.cy-cursor-glow > * { position: relative; z-index: 1; }
+
+/* ── Number flare (stronger pulse on change) ───────────────── */
+@keyframes numFlare {
+  0%   { transform: scale(1);    filter: brightness(1);   text-shadow: 0 0 8px currentColor; }
+  35%  { transform: scale(1.18); filter: brightness(2.2); text-shadow: 0 0 22px currentColor, 0 0 6px #fff; }
+  100% { transform: scale(1);    filter: brightness(1);   text-shadow: 0 0 8px currentColor; }
+}
+.cy-num-flare {
+  display: inline-block;
+  animation: numFlare 0.55s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transform-origin: 50% 60%;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

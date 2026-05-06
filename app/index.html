@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NEURAL.GYM // RESONANCE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@500;700;900&family=Noto+Sans+JP:wght@300;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/intro/style.css">
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<!-- Custom cursor — tracked by JS, color-tints over sigils -->
+<div id="cursor" aria-hidden="true">
+  <div class="cur-cross"></div>
+  <div class="cur-ring"></div>
+  <div class="cur-dot"></div>
+  <div class="cur-trail"></div>
+</div>
+
+<!-- Fade curtain over everything (intro fade-in, transition fade-out) -->
+<div id="curtain"></div>
+
+<!-- HUD chrome — corners + readouts (mostly z-above 3D) -->
+<div id="hud">
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <div class="readout top-left">
+    <div class="row"><span class="lbl">SYS</span><span class="val">NEURAL.GYM v4.2.1</span></div>
+    <div class="row"><span class="lbl">PROTO</span><span class="val">RESONANCE_BIND</span></div>
+    <div class="row"><span class="lbl">UID</span><span class="val" id="uid">— — — —</span></div>
+  </div>
+
+  <div class="readout top-right">
+    <div class="row"><span class="lbl">UTC</span><span class="val" id="utc">00:00:00</span></div>
+    <div class="row"><span class="lbl">CYCLE</span><span class="val ok">ACTIVE</span></div>
+    <div class="row"><span class="lbl">CHAMBER</span><span class="val" id="chamber-status">CALIBRATING…</span></div>
+  </div>
+
+  <div class="readout bottom-left">
+    <div class="row"><span class="lbl">DECK</span><span class="val">07 // RIO_DE_JANEIRO</span></div>
+    <div class="row"><span class="lbl">LAT</span><span class="val">12ms</span></div>
+  </div>
+
+  <div class="readout bottom-right">
+    <div class="row"><span class="lbl">FW</span><span class="val">CARBON_OS // 2.7.4</span></div>
+    <div class="row"><span class="lbl">BIO</span><span class="val warn" id="bio">UNBOUND</span></div>
+  </div>
+
+  <div class="kanji big">虚</div>
+  <div class="kanji med">魂</div>
+
+  <!-- Centered marquee — fades up after manifestation -->
+  <div class="marquee" id="marquee">
+    <h1 class="marquee-title">AVATAR<span class="dot">·</span>RESONANCE</h1>
+    <p class="marquee-sub">// CHAMBER_07 ::  five effigies await binding</p>
+  </div>
+
+  <!-- Bottom prompt -->
+  <div class="prompt" id="select-prompt">
+    <div class="prompt-text">SELECT_YOUR_RESONANCE</div>
+    <div class="prompt-hint">// hover and click an effigy</div>
+  </div>
+
+  <!-- Skip -->
+  <div class="skip" id="skip">PULAR <kbd>ESPAÇO</kbd></div>
+
+  <!-- Boot log (compact, bottom-left under readout) -->
+  <div class="boot-log" id="boot-log"></div>
+</div>
+
+<!-- 3D-anchored sigil labels (positioned by JS each frame) -->
+<div id="sigil-labels"></div>
+
+<!-- Final overlay -->
+<div id="final" class="final" aria-hidden="true">
+  <div class="final-glyph"><div class="final-core"></div></div>
+  <h1 id="final-title">NEURAL.GYM</h1>
+  <div class="final-sub">YOUR BODY · DECODED</div>
+  <div class="final-lock">
+    AVATAR_RESONANCE_LOCKED ::
+    <span class="ns" id="avatar-ns">ichigo</span><span class="dot">.</span><span class="key" id="avatar-key">vasto_lorde</span>
+  </div>
+  <button class="enter" id="enter" type="button">ENGAGE_PROTOCOL</button>
+</div>
+
+<script type="module" src="/intro/main.js"></script>
+</body>
+</html>

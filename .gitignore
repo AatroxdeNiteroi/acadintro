@@ -1,0 +1,55 @@
+# ─── Dependencies ─────────────────────────────────────────
+**/node_modules/
+.pnp
+.pnp.js
+
+# ─── Build output ─────────────────────────────────────────
+**/dist/
+**/build/
+**/.next/
+**/out/
+
+# ─── Environment ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+**/.env.local
+
+# ─── Editor / IDE / AI sessions ───────────────────────────
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*.iml
+
+# ─── Logs ─────────────────────────────────────────────────
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+*.log
+
+# ─── Vite cache ───────────────────────────────────────────
+**/.vite/
+
+# ─── OS junk ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Big binary assets that exceed GitHub's 100MB limit ──
+# Both copies (source `models/` and runtime `app/public/models/`).
+# These live in Google Drive — see DRIVE_ASSETS.md for download +
+# placement instructions when cloning on a fresh machine.
+
+# Kratos — Blade of Chaos (~222MB)
+models/blade_of_chaos_-_god_of_war.glb
+app/public/models/kratos.glb
+
+# Druid — Werewolf (~122MB)
+models/armoured_werewolf_warlord_-_untextured_meshy_6.glb
+app/public/models/druid.glb
+
+# (Other heavies stay in repo: guts 64MB, skybox 52MB, aatrox 15MB,
+#  knot 4.5MB, ichigo 5.8MB, anatomy 14MB. GitHub warns >50MB but
+#  accepts them. If you want a leaner repo, also ignore guts/skybox.)

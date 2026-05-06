@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>HOLO BODY · 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg-0: #02080d;
+    --bg-1: #051420;
+    --cyan: #00d4ff;
+    --cyan-dim: #4a8a9e;
+    --cyan-deep: #003d52;
+    --grid: rgba(0,212,255,0.08);
+    --warn: #ff6b3d;
+    --ok: #20e3a4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: radial-gradient(ellipse at center, #051a26 0%, #02080d 60%, #000 100%);
+    color: #b8e8f5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* HUD background grid */
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+
+  /* Vignette + scanline overlay */
+  .scanlines {
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(0,212,255,0.03) 2px,
+      rgba(0,212,255,0.03) 3px
+    );
+    pointer-events: none; z-index: 999;
+  }
+  .vignette {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none; z-index: 998;
+  }
+
+  /* Layout */
+  .app {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    grid-template-rows: 60px 1fr 80px;
+    grid-template-areas:
+      "topbar topbar topbar"
+      "left   stage  right"
+      "bottom bottom bottom";
+    gap: 12px;
+    padding: 12px;
+    z-index: 1;
+  }
+
+  /* Top bar */
+  .topbar {
+    grid-area: topbar;
+    display: flex; align-items: center; gap: 24px;
+    padding: 0 20px;
+    border: 1px solid rgba(0,212,255,0.3);
+    background: linear-gradient(90deg, rgba(0,40,60,0.4), rgba(0,20,30,0.2));
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  }
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900; font-size: 16px; color: var(--cyan);
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px var(--cyan);
+  }
+  .logo .sub { font-size: 10px; opacity: 0.6; letter-spacing: 2px; font-weight: 500; margin-left: 8px; }
+  .topbar-stats {
+    display: flex; gap: 28px; margin-left: auto;
+    font-size: 11px;
+  }
+  .topbar-stat .lbl { font-size: 9px; color: var(--cyan-dim); letter-spacing: 2px; }
+  .topbar-stat .val { font-family: 'Orbitron', sans-serif; font-weight: 700; color: var(--cyan); font-size: 14px; text-shadow: 0 0 8px rgba(0,212,255,0.6); }
+
+  /* Stage (canvas host) */
+  .stage {
+    grid-area: stage;
+    position: relative;
+    border: 1px solid rgba(0,212,255,0.3);
+    background:
+      radial-gradient(ellipse at center, rgba(0,40,60,0.3), rgba(0,10,20,0.5));
+    clip-path: polygon(0 12px, 12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px));
+    overflow: hidden;
+  }
+  #threecanvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  #threecanvas:active { cursor: grabbing; }
+
+  /* Stage HUD overlays */
+  .stage-corner {
+    position: absolute; width: 28px; height: 28px;
+    border: 1px solid var(--cyan);
+    pointer-events: none;
+  }
+  .stage-corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+  .stage-corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+  .stage-corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+  .stage-corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+  .stage-label {
+    position: absolute;
+    font-size: 9px; letter-spacing: 3px; color: var(--cyan-dim);
+    pointer-events: none;
+  }
+  .stage-label.tl { top: 14px; left: 44px; }
+  .stage-label.tr { top: 14px; right: 44px; }
+  .stage-label.bl { bottom: 14px; left: 44px; }
+  .stage-label.br { bottom: 14px; right: 44px; }
+
+  .rotation-readout {
+    position: absolute; top: 50%; right: 16px; transform: translateY(-50%);
+    pointer-events: none;
+    font-family: 'Orbitron', sans-serif;
+    text-align: right;
+  }
+  .rotation-readout .deg { font-size: 32px; color: var(--cyan); font-weight: 700; text-shadow: 0 0 12px var(--cyan); }
+  .rotation-readout .lbl { font-size: 9px; letter-spacing: 3px; color: var(--cyan-dim); }
+
+  .view-axis {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 16px;
+    pointer-events: none;
+    font-size: 10px; letter-spacing: 2px;
+  }
+  .view-axis span {
+    padding: 4px 10px;
+    border: 1px solid rgba(0,212,255,0.2);
+    background: rgba(0,30,40,0.4);
+    color: var(--cyan-dim);
+    transition: all 0.2s;
+  }
+  .view-axis span.active {
+    color: var(--cyan); border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,212,255,0.4);
+  }
+
+  /* Tooltip on hover */
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(0,15,25,0.92);
+    border: 1px solid var(--cyan);
+    padding: 10px 14px;
+    min-width: 220px;
+    font-size: 11px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.4);
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    z-index: 100;
+    transition: opacity 0.15s;
+    opacity: 0;
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip .name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700; color: var(--cyan); font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 8px var(--cyan);
+  }
+  .tooltip .latin { font-size: 10px; font-style: italic; color: var(--cyan-dim); margin-bottom: 6px; }
+  .tooltip .row { display: flex; justify-content: space-between; padding: 2px 0; border-top: 1px solid rgba(0,212,255,0.15); }
+  .tooltip .row:first-of-type { border-top: none; }
+  .tooltip .row .k { color: var(--cyan-dim); font-size: 10px; }
+  .tooltip .row .v { color: #fff; font-size: 10px; font-weight: 700; }
+
+  /* Side panels */
+  .panel {
+    border: 1px solid rgba(0,212,255,0.3);
+    background: linear-gradient(180deg, rgba(0,30,45,0.5), rgba(0,10,18,0.7));
+    padding: 14px;
+    clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+    overflow-y: auto;
+  }
+  .panel h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px; font-weight: 700;
+    color: var(--cyan); letter-spacing: 3px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0,212,255,0.2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel h3::before { content: ''; width: 6px; height: 6px; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+  .left { grid-area: left; }
+  .right { grid-area: right; }
+
+  /* Mode buttons */
+  .modes { display: flex; gap: 4px; margin-bottom: 14px; }
+  .mode-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: rgba(0,40,60,0.3);
+    border: 1px solid rgba(0,212,255,0.25);
+    color: var(--cyan-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  .mode-btn.active {
+    background: rgba(0,80,110,0.5);
+    color: var(--cyan); border-color: var(--cyan);
+    box-shadow: inset 0 0 12px rgba(0,212,255,0.3), 0 0 14px rgba(0,212,255,0.4);
+  }
+  .mode-btn:hover { color: #fff; }
+
+  /* Day pills */
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 6px; }
+  .day-pill {
+    padding: 6px 0;
+    border: 1px solid rgba(0,212,255,0.2);
+    background: rgba(0,20,30,0.4);
+    text-align: center;
+    font-size: 9px; color: var(--cyan-dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .day-pill.has-workout { color: var(--cyan); border-color: rgba(0,212,255,0.5); }
+  .day-pill.active { background: var(--cyan); color: #001520; font-weight: 700; box-shadow: 0 0 12px var(--cyan); }
+  .day-info { font-size: 10px; color: var(--cyan-dim); margin-top: 4px; }
+  .day-info .focus { color: var(--cyan); font-weight: 700; }
+
+  /* Strength legend */
+  .legend { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+  .legend-swatch { width: 14px; height: 10px; border: 1px solid rgba(255,255,255,0.2); }
+
+  /* Stats / bars */
+  .bars { display: flex; flex-direction: column; gap: 6px; }
+  .bar-row { font-size: 10px; }
+  .bar-row .lbl { display: flex; justify-content: space-between; margin-bottom: 2px; }
+  .bar-row .lbl .name { color: var(--cyan); letter-spacing: 1px; }
+  .bar-row .lbl .val { color: var(--cyan-dim); }
+  .bar-track { height: 5px; background: rgba(0,212,255,0.08); position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); transition: width 0.4s; }
+
+  /* Inspector */
+  .inspector .empty { color: var(--cyan-dim); font-size: 11px; padding: 20px 0; text-align: center; opacity: 0.6; }
+  .inspector .name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px; color: var(--cyan); letter-spacing: 2px;
+    text-shadow: 0 0 10px var(--cyan); margin-bottom: 2px;
+  }
+  .inspector .latin { font-size: 10px; font-style: italic; color: var(--cyan-dim); margin-bottom: 12px; }
+  .inspector .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid rgba(0,212,255,0.15); font-size: 11px; }
+  .inspector .stat-row .k { color: var(--cyan-dim); }
+  .inspector .stat-row .v { color: #fff; font-weight: 700; }
+  .inspector .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-top: 10px; }
+  .inspector .week-grid div {
+    aspect-ratio: 1;
+    border: 1px solid rgba(0,212,255,0.2);
+    background: rgba(0,20,30,0.4);
+    font-size: 8px;
+    display: grid; place-items: center;
+    color: var(--cyan-dim);
+  }
+  .inspector .week-grid div.hit { background: var(--cyan); color: #001520; box-shadow: 0 0 8px var(--cyan); font-weight: 700; }
+
+  .desc-block { font-size: 10px; line-height: 1.5; color: #98c8d8; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,212,255,0.15); }
+
+  /* Bottom bar */
+  .bottom {
+    grid-area: bottom;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(0,212,255,0.3);
+    background: linear-gradient(0deg, rgba(0,30,45,0.4), rgba(0,10,18,0.6));
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+  .vital { display: flex; flex-direction: column; justify-content: center; }
+  .vital .lbl { font-size: 9px; letter-spacing: 3px; color: var(--cyan-dim); margin-bottom: 4px; }
+  .vital .v { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); }
+  .vital .sub { font-size: 9px; color: var(--cyan-dim); margin-top: 2px; }
+  .heart-line { height: 30px; }
+
+  /* Reset rotation button */
+  .reset-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 8px;
+    background: rgba(0,40,60,0.3);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  .reset-btn:hover { background: rgba(0,80,110,0.5); box-shadow: 0 0 12px rgba(0,212,255,0.4); }
+
+  /* Loading */
+  .loading {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    background: rgba(0,10,20,0.9);
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 4px;
+    z-index: 50;
+    transition: opacity 0.5s;
+  }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .loading .ring {
+    width: 60px; height: 60px;
+    border: 2px solid rgba(0,212,255,0.2);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: rgba(0,212,255,0.05); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.3); }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="app">
+  <header class="topbar">
+    <div class="logo">HOLO_BODY <span class="sub">v3.0 // 3D ENGINE</span></div>
+    <div class="topbar-stats">
+      <div class="topbar-stat"><div class="lbl">SUJEITO</div><div class="val" id="t-subj">M · 28A</div></div>
+      <div class="topbar-stat"><div class="lbl">ALTURA</div><div class="val">178cm</div></div>
+      <div class="topbar-stat"><div class="lbl">PESO</div><div class="val">82kg</div></div>
+      <div class="topbar-stat"><div class="lbl">BF%</div><div class="val">14.2</div></div>
+      <div class="topbar-stat"><div class="lbl">SCAN</div><div class="val" id="t-scan">ATIVO</div></div>
+    </div>
+  </header>
+
+  <aside class="panel left">
+    <h3>MODO_VISUAL</h3>
+    <div class="modes">
+      <button class="mode-btn active" data-mode="semana">SEMANA</button>
+      <button class="mode-btn" data-mode="forca">FORÇA</button>
+      <button class="mode-btn" data-mode="volume">VOLUME</button>
+    </div>
+
+    <div id="mode-content"></div>
+
+    <h3 style="margin-top:18px">CONTROLE_3D</h3>
+    <div style="font-size:10px; color: var(--cyan-dim); line-height: 1.6;">
+      <div>↻ ARRASTAR · rotacionar</div>
+      <div>⊕ SCROLL · zoom</div>
+      <div>⊙ CLIQUE · inspecionar</div>
+      <div>⊡ DUPLO_CLIQUE · zoom em região</div>
+    </div>
+    <button class="reset-btn" id="reset-cam">RESET_CAMERA</button>
+
+    <h3 style="margin-top:18px">DISTRIB_FORÇA</h3>
+    <div class="bars" id="strength-bars"></div>
+  </aside>
+
+  <main class="stage">
+    <canvas id="threecanvas"></canvas>
+    <div class="loading" id="loading"><div style="text-align:center"><div class="ring" style="margin:0 auto 16px"></div>INICIALIZANDO_TECIDO_MUSCULAR…</div></div>
+    <script>setTimeout(()=>document.getElementById('loading').classList.add('hidden'),1500)</script>
+    <div class="stage-corner tl"></div><div class="stage-corner tr"></div>
+    <div class="stage-corner bl"></div><div class="stage-corner br"></div>
+    <div class="stage-label tl">SCAN_360</div>
+    <div class="stage-label tr">RES_4K</div>
+    <div class="stage-label bl">ID_M01</div>
+    <div class="stage-label br" id="lbl-fps">— FPS</div>
+    <div class="rotation-readout"><div class="deg" id="rot-deg">000°</div><div class="lbl">Y_AXIS</div></div>
+    <div class="view-axis">
+      <span id="ax-front">FRENTE</span>
+      <span id="ax-right">DIREITA</span>
+      <span id="ax-back">COSTAS</span>
+      <span id="ax-left">ESQUERDA</span>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+  </main>
+
+  <aside class="panel right inspector" id="inspector">
+    <h3>INSPETOR_MUSCULAR</h3>
+    <div class="empty">SELECIONE UM MÚSCULO<br/>NO HOLOGRAMA</div>
+  </aside>
+
+  <footer class="bottom">
+    <div class="vital">
+      <div class="lbl">SINAL_VITAL_7D</div>
+      <svg class="heart-line" viewBox="0 0 400 30" preserveAspectRatio="none">
+        <polyline fill="none" stroke="#00d4ff" stroke-width="1.2" stroke-linejoin="round"
+          points="0,15 30,15 35,5 40,25 45,15 100,15 105,8 110,22 115,15 180,15 185,3 190,27 195,15 280,15 285,9 290,21 295,15 400,15"
+          style="filter: drop-shadow(0 0 4px #00d4ff)"/>
+      </svg>
+    </div>
+    <div class="vital"><div class="lbl">VOL_7D</div><div class="v">42<span style="font-size:12px">k</span></div><div class="sub">+12% vs prev</div></div>
+    <div class="vital"><div class="lbl">RECUP</div><div class="v">87<span style="font-size:12px">%</span></div><div class="sub">otimo</div></div>
+    <div class="vital"><div class="lbl">PRONTIDÃO</div><div class="v" style="color:var(--ok)">PEAK</div><div class="sub">treino_ok</div></div>
+  </footer>
+</div>
+
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<!-- Three.js -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="holo3d.js"></script>
+
+</body>
+</html>
